@@ -1,0 +1,61 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  code      String   @unique // e.g., USA, BRA, GER
+  flagUrl   String
+  groupName String   // A, B, C, etc.
+  createdAt DateTime @default(now())
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+  events      MatchEvent[]
+  favoritedBy User[]  @relation("UserFavorites")
+}
+
+model Match {
+  id           Int          @id @default(autoincrement())
+  homeTeamId   Int
+  awayTeamId   Int
+  homeTeam     Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam     Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeScore    Int          @default(0)
+  awayScore    Int          @default(0)
+  status       String       // "UPCOMING", "LIVE", "FINISHED", "POSTPONED"
+  minute       Int          @default(0)
+  kickoffTime  DateTime
+  venue        String
+  isFeatured   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  events       MatchEvent[]
+}
+
+model MatchEvent {
+  id         Int      @id @default(autoincrement())
+  matchId    Int
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamId     Int?
+  team       Team?    @relation(fields: [teamId], references: [id])
+  playerName String
+  type       String   // "GOAL", "YELLOW_CARD", "RED_CARD", "SUB"
+  minute     Int
+  extraTime  Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  favorites    Team[]   @relation("UserFavorites")
+}
